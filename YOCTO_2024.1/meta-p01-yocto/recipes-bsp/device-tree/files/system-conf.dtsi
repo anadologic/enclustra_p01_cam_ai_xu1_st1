@@ -1,0 +1,41 @@
+/*
+ * Board-level device tree settings that PetaLinux generates as system-conf.dtsi from
+ * project-spec/configs/config. The Enclustra system-user.dtsi includes this file. The kernel
+ * command line is set in p01-bootargs.dtsi (layers/meta-p01), which is included later.
+ */
+
+/ {
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	options {
+		u-boot {
+			compatible = "u-boot,config";
+			bootscr-address = /bits/ 64 <0x20000000>;
+		};
+	};
+};
+
+&gem3 {
+	local-mac-address = [ff ff ff ff ff ff];
+};
+
+&qspi {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	flash0: flash@0 {
+		partition@0 {
+			label = "qspi-boot";
+			reg = <0x00000000 0x00100000>;
+		};
+		partition@1 {
+			label = "qspi-kernel";
+			reg = <0x00100000 0x01600000>;
+		};
+		partition@2 {
+			label = "qspi-bootenv";
+			reg = <0x01700000 0x00040000>;
+		};
+	};
+};

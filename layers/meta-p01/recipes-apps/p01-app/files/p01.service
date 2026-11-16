@@ -1,0 +1,36 @@
+# ----------------------------------------------------------------------------------------------------
+# p01 demo service. Installed by the p01-app recipe, DISABLED by default.
+#
+#   start at every power-up:  systemctl enable --now p01
+#   stop / start once:        systemctl stop p01   /   systemctl start p01
+#   log (camera modes, the selected mode, statistics every 5 s):  journalctl -u p01 -f
+#
+# Camera options in P01_ARGS (change with: systemctl edit p01, then add
+#   [Service]
+#   Environment="P01_ARGS=--format mjpeg --size auto --max-size 1280x720 --fps 30"
+# ):
+#   --format mjpeg | yuyv   MJPEG (default) is decoded on the CPU; YUYV needs no decoding, but USB 2.0
+#                           cameras give 30 fps in YUYV only up to about 640x480. A camera without
+#                           MJPEG runs in YUYV automatically.
+#   --size auto | WxH       auto (default): the largest mode up to --max-size that reaches --fps
+#   --max-size WxH          limit for auto, default 1280x960; if the camera does not have it, the next
+#                           smaller mode is used (e.g. 1280x720)
+#   --fps N                 default 30
+#   --dev /dev/videoN       default /dev/video0
+#   --view cover | fit      full screen, cropped (default) or the whole frame with bars
+#   --lowlat, --conf 0.4, --nms 0.45   see p01-app --help
+# ----------------------------------------------------------------------------------------------------
+[Unit]
+Description=P01 camera AI demo - USB camera -> PL preprocessing -> DPU YOLOv5-nano -> GPU overlay (DisplayPort)
+Wants=dev-video0.device
+After=dev-video0.device
+
+[Service]
+Type=simple
+Environment="P01_ARGS=--format mjpeg --size auto --max-size 1280x960 --fps 30"
+ExecStart=/usr/bin/p01-run.sh $P01_ARGS
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

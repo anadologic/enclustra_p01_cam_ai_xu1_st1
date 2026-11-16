@@ -1,0 +1,16 @@
+/*
+ * The video pipeline (Frame Buffer Read -> p01_preproc -> Frame Buffer Write,
+ * reset GPIO) is programmed from user space by p01-app through /dev/mem. Keep the Linux
+ * xilinx_frmbuf DMA driver and the GPIO driver off these blocks. Labels: pl.dtsi (BD cell names).
+ */
+&fb_rd {
+	status = "disabled";
+};
+
+&fb_wr {
+	status = "disabled";
+};
+
+&video_rst {
+	status = "disabled";
+};

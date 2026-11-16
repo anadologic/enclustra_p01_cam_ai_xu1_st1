@@ -1,0 +1,26 @@
+Subject: [PATCH 3/3] zynqmp: avoid duplicate fitImage in KERNEL_IMAGETYPES
+ under PetaLinux
+
+---
+ meta-enclustra-module/conf/machine/zynqmp-override.inc | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/meta-enclustra-module/conf/machine/zynqmp-override.inc b/meta-enclustra-module/conf/machine/zynqmp-override.inc
+index 012ef68..d4cec48 100644
+--- a/meta-enclustra-module/conf/machine/zynqmp-override.inc
++++ b/meta-enclustra-module/conf/machine/zynqmp-override.inc
+@@ -8,7 +8,10 @@ SOC_VARIANT = "${@'ev' if 'ev' in d.getVar('MACHINE') else 'eg' if 'eg' in d.get
+ require conf/machine/zynqmp-${SOC_VARIANT}-generic.conf
+ 
+ KERNEL_CLASSES:append = " kernel-fitimage"
+-KERNEL_IMAGETYPES:append = " fitImage"
++## PetaLinux 2024.1 port: the PetaLinux tool already appends fitImage to
++## KERNEL_IMAGETYPES (plnxtool.conf). Appending it twice creates the
++## kernel-image-fitimage package twice and fails the packages-list QA check.
++KERNEL_IMAGETYPES:append = "${@'' if d.getVar('WITHIN_PLNX_FLOW') == '1' else ' fitImage'}"
+ 
+ inherit image_types_enclustra
+ IMAGE_TYPES:append = " cpio_enclustra.xz"
+-- 
+2.34.1
+

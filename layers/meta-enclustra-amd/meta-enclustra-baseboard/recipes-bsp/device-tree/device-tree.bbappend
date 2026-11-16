@@ -1,0 +1,112 @@
+FILESEXTRAPATHS:prepend:zynqmp-generic := "${THISDIR}/files/zynqmp:${SYSCONFIG_PATH}:"
+FILESEXTRAPATHS:prepend:zynq-generic := "${THISDIR}/files/zynq:${SYSCONFIG_PATH}:"
+
+SRC_URI:append = " file://system-user.dtsi"
+SRC_URI:append:pe1-generic = " file://enclustra_mercury_pe1.dtsi"
+SRC_URI:append:pe3-generic = " file://enclustra_mercury_pe3.dtsi"
+SRC_URI:append:pe5-generic = " file://enclustra_andromeda_pe5.dtsi"
+SRC_URI:append:st1-generic = " file://enclustra_mercury_st1.dtsi"
+SRC_URI:append:st3-generic = " file://enclustra_mars_st3.dtsi"
+
+## fix DT flags for petalinux tool
+## (required with explicit override ONLY!)
+YAML_DT_BOARD_FLAGS = "{BOARD template}"
+PROC_TUNE = "${@'cortexa53' if d.getVar('SYSTEM_DTFILE') != '' else ''}"
+
+ENCLUSTRA_BOOTMODE := "sd"
+ENCLUSTRA_BOOTMODE:enclustra-qspi := "qspi"
+ENCLUSTRA_BOOTMODE:enclustra-emmc := "emmc"
+DEFAULT_BOOTARGS = "earlycon console=ttyPS0,115200 clk_ignore_unused uio_pdrv_genirq.of_id=generic-uio"
+DEFAULT_BOOTARGS:append:enclustra-qspi = " root=/dev/ram0 rw"
+
+## append SOM dtsi
+do_configure:prepend:xu1-module() {
+    echo "#include \"zynqmp_enclustra_mercury_xu1.dtsi\"" >> ../system-user.dtsi
+}
+do_configure:prepend:xu3-module() {
+    echo "#include \"zynqmp_enclustra_mars_xu3.dtsi\"" >> ../system-user.dtsi
+}
+do_configure:prepend:xu5-module() {
+    echo "#include \"zynqmp_enclustra_mercury_xu5.dtsi\"" >> ../system-user.dtsi
+}
+do_configure:prepend:xu6-module() {
+    echo "#include \"zynqmp_enclustra_mercury_xu6.dtsi\"" >> ../system-user.dtsi
+}
+do_configure:prepend:xu61-module() {
+    echo "#include \"zynqmp_enclustra_mercury_xu61.dtsi\"" >> ../system-user.dtsi
+}
+do_configure:prepend:xu7-module() {
+    echo "#include \"zynqmp_enclustra_mercury_xu7.dtsi\"" >> ../system-user.dtsi
+}
+do_configure:prepend:xu8-module() {
+    echo "#include \"zynqmp_enclustra_mercury_xu8.dtsi\"" >> ../system-user.dtsi
+}
+do_configure:prepend:xu9-module() {
+    echo "#include \"zynqmp_enclustra_mercury_xu9.dtsi\"" >> ../system-user.dtsi
+}
+do_configure:prepend:xzu65-module() {
+    echo "#include \"zynqmp_enclustra_andromeda_xzu65.dtsi\"" >> ../system-user.dtsi
+}
+do_configure:prepend:xzu80-module() {
+    echo "#include \"zynqmp_enclustra_andromeda_xzu80.dtsi\"" >> ../system-user.dtsi
+}
+do_configure:prepend:xzu90-module() {
+    echo "#include \"zynqmp_enclustra_andromeda_xzu90.dtsi\"" >> ../system-user.dtsi
+}
+do_configure:prepend:xru30-module() {
+    echo "#include \"zynqmp_enclustra_andromeda_xru30.dtsi\"" >> ../system-user.dtsi
+}
+do_configure:prepend:xru50-module() {
+    echo "#include \"zynqmp_enclustra_andromeda_xru50.dtsi\"" >> ../system-user.dtsi
+}
+do_configure:prepend:zx1-module() {
+    echo "#include \"zynq_enclustra_mercury_zx1.dtsi\"" >> ../system-user.dtsi
+}
+do_configure:prepend:zx2-module() {
+    echo "#include \"zynq_enclustra_mars_zx2.dtsi\"" >> ../system-user.dtsi
+}
+do_configure:prepend:zx3-module() {
+    echo "#include \"zynq_enclustra_mars_zx3.dtsi\"" >> ../system-user.dtsi
+}
+do_configure:prepend:zx5-module() {
+    echo "#include \"zynq_enclustra_mercury_zx5.dtsi\"" >> ../system-user.dtsi
+}
+
+## baseboard
+do_configure:append:pe1-generic() {
+    echo "#include \"enclustra_mercury_pe1.dtsi\"" >> ../system-user.dtsi
+}
+do_configure:append:pe3-generic() {
+    echo "#include \"enclustra_mercury_pe3.dtsi\"" >> ../system-user.dtsi
+}
+do_configure:append:pe5-generic() {
+    echo "#include \"enclustra_andromeda_pe5.dtsi\"" >> ../system-user.dtsi
+}
+do_configure:append:st1-generic() {
+    echo "#include \"enclustra_mercury_st1.dtsi\"" >> ../system-user.dtsi
+}
+do_configure:append:st3-generic() {
+    echo "#include \"enclustra_mars_st3.dtsi\"" >> ../system-user.dtsi
+}
+
+## bootargs
+# depending on the boot mode, the u-boot script adds additional variables, e.g. for the root node
+devicetree_do_compile:prepend() {
+    # PetaLinux 2024.1 port: the DTS files are not always below the build dir (B).
+    # In the PetaLinux flow XSCTH_WS:pn-device-tree points to
+    # components/plnx_workspace, so resolve system-top.dts via DT_FILES_PATH.
+    system_top = os.path.join(d.getVar('DT_FILES_PATH'), 'system-top.dts')
+
+    bootargs = d.getVar('DEFAULT_BOOTARGS')
+    os.system(f"sed -ie '\\|bootargs =|s|.*|             bootargs = \"{bootargs}\";|' {system_top}")
+
+    os.system("sed -rie 's@(/include/.*)@// \1@' ../system-user.dtsi")
+
+    # PetaLinux (petalinux_hsm_bridge.tcl) already appends this include;
+    # only add it when missing to avoid including system-user.dtsi twice.
+    with open(system_top) as f:
+        already_included = '#include "system-user.dtsi"' in f.read()
+    if not already_included:
+        with open(system_top, 'a') as f:
+            f.write('\n#include "system-user.dtsi"\n')
+}

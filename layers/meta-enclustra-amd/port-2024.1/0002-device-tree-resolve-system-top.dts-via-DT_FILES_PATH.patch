@@ -1,0 +1,40 @@
+Subject: [PATCH 2/3] device-tree: resolve system-top.dts via DT_FILES_PATH for
+ PetaLinux 2024.1
+
+---
+ .../device-tree/device-tree.bbappend            | 17 +++++++++++++----
+ 1 file changed, 13 insertions(+), 4 deletions(-)
+
+diff --git a/meta-enclustra-baseboard/recipes-bsp/device-tree/device-tree.bbappend b/meta-enclustra-baseboard/recipes-bsp/device-tree/device-tree.bbappend
+index b02b219..0933c12 100644
+--- a/meta-enclustra-baseboard/recipes-bsp/device-tree/device-tree.bbappend
++++ b/meta-enclustra-baseboard/recipes-bsp/device-tree/device-tree.bbappend
+@@ -92,12 +92,21 @@ do_configure:append:st3-generic() {
+ ## bootargs
+ # depending on the boot mode, the u-boot script adds additional variables, e.g. for the root node
+ devicetree_do_compile:prepend() {
++    # PetaLinux 2024.1 port: the DTS files are not always below the build dir (B).
++    # In the PetaLinux flow XSCTH_WS:pn-device-tree points to
++    # components/plnx_workspace, so resolve system-top.dts via DT_FILES_PATH.
++    system_top = os.path.join(d.getVar('DT_FILES_PATH'), 'system-top.dts')
++
+     bootargs = d.getVar('DEFAULT_BOOTARGS')
+-    os.system(f"sed -ie '\\|bootargs =|s|.*|             bootargs = \"{bootargs}\";|' device-tree/system-top.dts")
++    os.system(f"sed -ie '\\|bootargs =|s|.*|             bootargs = \"{bootargs}\";|' {system_top}")
+ 
+     os.system("sed -rie 's@(/include/.*)@// \1@' ../system-user.dtsi")
+ 
+-    f = open('device-tree/system-top.dts', 'a')
+-    f.write('#include "system-user.dtsi"')
+-    f.close()
++    # PetaLinux (petalinux_hsm_bridge.tcl) already appends this include;
++    # only add it when missing to avoid including system-user.dtsi twice.
++    with open(system_top) as f:
++        already_included = '#include "system-user.dtsi"' in f.read()
++    if not already_included:
++        with open(system_top, 'a') as f:
++            f.write('\n#include "system-user.dtsi"\n')
+ }
+-- 
+2.34.1
+

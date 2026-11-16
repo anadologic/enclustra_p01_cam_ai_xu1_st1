@@ -1,0 +1,9 @@
+/*
+ * Kernel command line. Included at the end of system-user.dtsi, so it replaces the
+ * bootargs that system-top.dts takes from meta-enclustra-baseboard (DEFAULT_BOOTARGS).
+ */
+/ {
+	chosen {
+		bootargs = "earlycon console=ttyPS0,115200 root=/dev/mmcblk1p2 rw rootfstype=ext4 rootwait clk_ignore_unused consoleblank=0 cma=700M uio_pdrv_genirq.of_id=generic-uio panic=3";
+	};
+};
